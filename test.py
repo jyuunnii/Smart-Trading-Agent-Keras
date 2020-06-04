@@ -71,11 +71,31 @@ orderbook1['timestamp'] = orderbook1['timestamp'].map(lambda x:x.split('8-')[1].
 orderbook2['timestamp'] = orderbook2['timestamp'].map(lambda x:x.split('8-')[1].split('.')[0].strip()) #### 05-02 00:00:00
 
 nb1 = orderbook1.groupby('timestamp').agg(top_bid_price=('price', lambda x:list(x)[14]), top_ask_price = ('price', lambda x: list(x)[15]))
-nb1['MidPrice'] = nb1.mean(axis=1) # add a column 
+nb1['mid_price'] = nb1.mean(axis=1) # add a column 
+nb11.reset_index(level=['timestamp'], inplace = True)
 
 nb2 = orderbook1.groupby(['timestamp', 'type']).mean()
-nb2.reset_index().groupby(['timestamp', 'type'])['quantity','price'].aggregate('first').unstack()
-nb2.rename(columns={0:'bid', 1:'ask'})
+temp1 = nb2.reset_index().groupby(['timestamp', 'type'])['quantity'].aggregate('first').unstack().rename(columns={0:'bidQty', 1:'askQty'})
+temp1.astype(int)
+temp1.reset_index(level=['timestamp'], inplace = True)
+temp2 = nb2.reset_index().groupby(['timestamp', 'type'])['price'].aggregate('first').unstack().rename(columns={0:'bidPx', 1:'askPx'})
+temp2.astype(int)
+temp2.reset_index(level=['timestamp'], inplace = True)
+
+
+nb3 = pd.merge(temp1, temp2)
+
+# In[6]:
+import numpy as np
+
+def bp(aQ,bQ,aP,bP): 
+    return (((aQ*bP)/bQ)+((bQ*aP)/aQ))/(bQ+aQ)
+
+nb3['book_price'] = np.vectorize(bp)(nb3['askQty'], nb43'bidQty'], nb3['askPx'], nb3['bidPx']).astype(int)
+nb3['book_feature'] = np.subtract(nb3['book_price'], nb3['mid_price'])
+
+
+newbook1 = n3[['timestamp', 'book_price', 'mid_price', 'book_feature']]
 
 
 
