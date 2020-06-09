@@ -3,7 +3,6 @@
 pandas
 matplotlib.pyplot
 seaborn
-sklearn
 numpy
 
 conda info --env (project list)
@@ -42,7 +41,7 @@ tincome ### 1273657117
 
 tprofit = tincome + tcost ### -9506902
 
-# In[3]:
+# In[3]: Visualization
 ## periods = trade['timestamp'].map(lambda x:x.split(':')[0].strip()) #### 2018-05-01 01
 trade['timestamp'] = trade['timestamp'].map(lambda x:x.split('8-')[1].split(':')[0].strip()) #### 05-01 01
 
@@ -67,7 +66,7 @@ plt.show()
 # In[4]:
 orderbook1 = pd.read_csv('data/2018-05-01-orderbook.csv')
 
-orderbook1['timestamp'] = orderbook1['timestamp'].map(lambda x:x.split('8-')[1].split('.')[0].strip()) #### 05-01 00:00:00
+orderbook1['timestamp'] = orderbook1['timestamp'].map(lambda x:x.split('.')[0].strip()) #### 05-01 00:00:00
 
 nb1 = orderbook1.groupby('timestamp').agg(top_bid_price=('price', lambda x:list(x)[14]), top_ask_price = ('price', lambda x: list(x)[15]))
 nb1['mid_price'] = nb1.mean(axis=1) # add a column 
@@ -96,16 +95,13 @@ nb3['book_price'] = np.vectorize(bp)(nb3['askQty'], nb3['bidQty'], nb3['askPx'],
 nb3['book_feature'] = np.subtract(nb3['book_price'], nb3['mid_price'])
 
 
-newbook1 = nb3[['timestamp', 'book_price', 'mid_price', 'book_feature']]
-
-#newbook1_DF = pd.DataFrame(newbook1)
-#newbook1_DF.to_csv('data/2018-05-01-newbook.csv', header = True, index= False)
+newbook1 = nb3[['timestamp', 'mid_price', 'book_feature']]
 
 
-# In[6]: Repeat for orderbook2
+# In[6]: Repeat for orderbook2 and merge both orderbook1, orderbook2
 orderbook2 = pd.read_csv('data/2018-05-02-orderbook.csv')
 
-orderbook2['timestamp'] = orderbook2['timestamp'].map(lambda x:x.split('8-')[1].split('.')[0].strip()) #### 05-02 00:00:00
+orderbook2['timestamp'] = orderbook2['timestamp'].map(lambda x:x.split('.')[0].strip()) #### 05-02 00:00:00
 
 nb1 = orderbook2.groupby('timestamp').agg(top_bid_price=('price', lambda x:list(x)[14]), top_ask_price = ('price', lambda x: list(x)[15]))
 nb1['mid_price'] = nb1.mean(axis=1) # add a column 
@@ -125,12 +121,16 @@ nb3['mid_price'] = nb1['mid_price']
 nb3['book_price'] = np.vectorize(bp)(nb3['askQty'], nb3['bidQty'], nb3['askPx'], nb3['bidPx']).astype(int)
 nb3['book_feature'] = np.subtract(nb3['book_price'], nb3['mid_price'])
 
-newbook2 = nb3[['timestamp', 'book_price', 'mid_price', 'book_feature']]
-#newbook2_DF = pd.DataFrame(newbook2)
-#newbook2_DF.to_csv('data/2018-05-02-newbook.csv', header = True, index= False)
+newbook2 = nb3[['timestamp', 'mid_price', 'book_feature']]
 
+tnewbook = pd.concat([newbook1, newbook2]) ### tnewbook shows the requested buy and sell orders in the market.
 
-#In[7]:
-tnewbook = pd.concat([newbook1, newbook2])
-tnewbook_DF = pd.DataFrame(tnewbook)
-tnewbook_DF.to_csv('data/2018-05-trade.csv', header = True, index = False)
+# In[7]: Create a new trade.csv
+
+trade = pd.read_csv('data/2018-05-trade.csv')
+trade = trade[['timestamp','price','side']]
+
+newtrade = pd.merge(trade, tnewbook)
+
+newtrade_DF = pd.DataFrame(newtrade)
+newtrade_DF.to_csv('data/2018-05-newtrade.csv', header=True, index=False)
