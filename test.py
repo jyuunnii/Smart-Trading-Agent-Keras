@@ -4,6 +4,7 @@ pandas
 matplotlib.pyplot
 seaborn
 numpy
+nomkl (debugging)
 
 conda info --env (project list)
 conda activate [PROJECT NAME] (activation)
